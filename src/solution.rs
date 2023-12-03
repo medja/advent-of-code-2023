@@ -52,7 +52,7 @@ where
 pub struct Challenges([Option<Parts>; 25]);
 
 impl Challenges {
-    pub async fn solve(&self, day: Day, part: Part) -> anyhow::Result<Solution> {
+    pub fn solve(&self, day: Day, part: Part) -> anyhow::Result<Solution> {
         let parts = match self.0[day.into_index()] {
             Some(ref parts) => parts,
             None => anyhow::bail!("Day is not defined"),
@@ -68,7 +68,7 @@ impl Challenges {
             None => anyhow::bail!("Part is not solved"),
         };
 
-        challenge.solve(day, part, parts.name, aoc::get(day).await?)
+        challenge.solve(day, part, parts.name, aoc::get(day)?)
     }
 
     #[doc(hidden)]

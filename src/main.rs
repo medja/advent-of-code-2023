@@ -8,19 +8,15 @@ mod challenge;
 mod day;
 mod solution;
 
-#[tokio::main]
-async fn main() -> anyhow::Result<()> {
+fn main() -> anyhow::Result<()> {
     if std::env::args().count() > 1 {
-        run(std::env::args().skip(1).map(Ok), false).await
+        run(std::env::args().skip(1).map(Ok), false)
     } else {
-        run(std::io::stdin().lock().lines(), true).await
+        run(std::io::stdin().lock().lines(), true)
     }
 }
 
-async fn run(
-    args: impl Iterator<Item = std::io::Result<String>>,
-    prompt: bool,
-) -> anyhow::Result<()> {
+fn run(args: impl Iterator<Item = std::io::Result<String>>, prompt: bool) -> anyhow::Result<()> {
     if prompt {
         print!("> ");
         _ = std::io::stdout().flush();
@@ -29,7 +25,7 @@ async fn run(
     let challenges = challenges();
 
     for arg in args {
-        solve(&arg?, &challenges).await;
+        solve(&arg?, &challenges);
 
         if prompt {
             println!();
@@ -41,7 +37,7 @@ async fn run(
     Ok(())
 }
 
-async fn solve(arg: &str, challenges: &Challenges) {
+fn solve(arg: &str, challenges: &Challenges) {
     let (day, part) = match parse_arg(arg) {
         Ok(Some((day, part))) => (day, part),
         Ok(None) => return,
@@ -51,7 +47,7 @@ async fn solve(arg: &str, challenges: &Challenges) {
         }
     };
 
-    match challenges.solve(day, part).await {
+    match challenges.solve(day, part) {
         Ok(solution) => println!(
             "Day {}: {} (Part {}): {} (duration = {:?})",
             solution.day, solution.name, solution.part, solution.result, solution.duration
