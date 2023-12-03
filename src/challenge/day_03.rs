@@ -35,6 +35,10 @@ fn sum_part_numbers(input: &[&str]) -> u32 {
         }
     }
 
+    if number > 0 && is_part_number {
+        part_number_sum += number;
+    }
+
     part_number_sum
 }
 
