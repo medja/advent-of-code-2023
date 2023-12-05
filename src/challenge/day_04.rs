@@ -31,7 +31,6 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 }
 
 fn score_card<const SUM: bool>(card: &str, offsets: (usize, usize)) -> usize {
-    let mut score = 0;
     let mut winning_numbers = [0u8; 10];
 
     for (number, winning_number) in card[offsets.0 + 2..offsets.1 - 1]
@@ -41,19 +40,16 @@ fn score_card<const SUM: bool>(card: &str, offsets: (usize, usize)) -> usize {
         *winning_number = number.parse().unwrap();
     }
 
-    for number in card[offsets.1 + 2..].split_ascii_whitespace() {
-        if !winning_numbers.contains(&number.parse().unwrap()) {
-            continue;
-        }
+    let count = card[offsets.1 + 2..]
+        .split_ascii_whitespace()
+        .filter(|number| winning_numbers.contains(&number.parse().unwrap()))
+        .count();
 
-        if SUM {
-            score += 1;
-        } else if score == 0 {
-            score = 1;
-        } else {
-            score *= 2;
-        }
+    if SUM {
+        count
+    } else if count == 0 {
+        0
+    } else {
+        1 << (count - 1)
     }
-
-    score
 }
