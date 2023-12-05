@@ -37,7 +37,6 @@ fn laod_inputs(day: Day) -> anyhow::Result<String> {
     };
 
     if let Ok(response) = std::fs::read_to_string(&path) {
-        println!("{}", path.display());
         return Ok(response);
     }
 
