@@ -5,6 +5,7 @@ mod day_02;
 mod day_03;
 mod day_04;
 mod day_05;
+mod day_06;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -13,5 +14,6 @@ pub fn challenges() -> Challenges {
         day(3, "Gear Ratios", day_03::part_a, day_03::part_b),
         day(4, "Scratchcards", day_04::part_a, day_04::part_b),
         day(5, "If You Give A Seed A Fertilizer", day_05::part_a, day_05::part_b),
+        day(6, "Wait For It", day_06::part_a, day_06::part_b),
     }
 }
