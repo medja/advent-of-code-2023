@@ -79,11 +79,6 @@ fn find_min_time(limit: u64, record: u64) -> u64 {
  */
 fn solve_min_time(limit: u64, record: u64) -> u64 {
     let min = ((limit as f64) - ((limit * limit - 4 * record) as f64).sqrt()) / 2f64;
-    let min_ceil = min.ceil();
-
-    if min == min_ceil {
-        min as u64 - 1
-    } else {
-        min_ceil as u64
-    }
+    // finds next whole number (`as u64` floors the number)
+    min as u64 + 1
 }
