@@ -1,11 +1,11 @@
 // Each card is represented by a single base-13 number.
-// Because each hand consists of 5 cards, we can distinguish different strengths
-// by shifting the the value of the hand by 5 * hand strength.
+// Because each hand consists of 5 cards, it uses up 5 base-13 digits.
+// We can encode the strength of the hand by setting it as the 6th digit of the hand.
 // This means that better hands always have a higher value weaker hands.
 // Example representation (in base-13 with X, Y, and Z as placeholders):
-// 5 of a kind: XXXXX 00000 00000 00000 00000 00000 00000
-// full house:  00000 00000 XXYYX 00000 00000 00000 00000
-// two pairs:   00000 00000 00000 00000 00000 XXYYZ 00000
+// 5 of a kind: 6 XXXXX
+// full house:  4 XXYYX
+// two pairs:   2 XXYYZ
 const HAND_STRENGTH_OFFSET: u32 = 13u32.pow(5);
 const FIVE_OF_A_KIND_OFFSET: u32 = 6 * HAND_STRENGTH_OFFSET;
 const FOUR_OF_A_KIND_OFFSET: u32 = 5 * HAND_STRENGTH_OFFSET;
