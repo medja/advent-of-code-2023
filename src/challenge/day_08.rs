@@ -33,13 +33,17 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let directions = parse_directions(input[0]);
 
     let solution = positions.into_iter().fold(1u64, |solution, position| {
-        // The paths taken from each starting position seem to form a cycle.
-        // They don't actually go over the same nodes, but they do always end up on the exact same Z node.
-        // And the number of steps from the start node to the first Z node and from one Z node to the next
-        // is always the same.
-        // So from starting position 1 we'll get to a Z node every X steps, and from position 2 every Y steps, ..
-        // This means that we'll visit a Z node from all starting positions simulatniously on the first step
-        // divisible by all of the cycle lengths.
+        // The paths taken from each starting position form a cycle.
+        // And each path only ever visits a single Z node.
+        // The number of steps required to reach the Z node is constant across all iterations.
+        // (That number is also divisible by the number of directions)
+        // The first few nodes aren't part of the cycle, but the number of steps required to
+        // reach the first Z node is identical to later iterations.
+        // This means that we reach a Z node every N steps, where N is different for every path.
+        // And we're only ever on a Z node on the Nth step.
+        // As a result, the number of steps at which we're on all Z nodes at once must be
+        // divisible by all of the cycle lengths. And the fist time that happens is on the
+        // smallest (least) common multiple of all of the cycle lengths.
         let steps = count_steps(position, &network, directions.clone()) as u64;
         solution * steps / solution.gcd(steps)
     });
