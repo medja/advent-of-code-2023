@@ -8,6 +8,7 @@ mod day_05;
 mod day_06;
 mod day_07;
 mod day_08;
+mod day_09;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -18,6 +19,7 @@ pub fn challenges() -> Challenges {
         day(5, "If You Give A Seed A Fertilizer", day_05::part_a, day_05::part_b),
         day(6, "Wait For It", day_06::part_a, day_06::part_b),
         day(7, "Camel Cards", day_07::part_a, day_07::part_b),
-        day(8, "Haunted Wasteland", day_08::part_a, day_08::part_b)
+        day(8, "Haunted Wasteland", day_08::part_a, day_08::part_b),
+        day(9, "Mirage Maintenance", day_09::part_a, day_09::part_b),
     }
 }
