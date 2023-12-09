@@ -42,7 +42,9 @@ fn laod_inputs(day: Day) -> anyhow::Result<String> {
 
     let session = std::env::var("SESSION").context("SESSION is not defined")?;
 
-    let response = reqwest::blocking::Client::default()
+    let response = reqwest::blocking::Client::builder()
+        .user_agent("https://github.com/medja/advent-of-code-2023")
+        .build()?
         .get(format!("https://adventofcode.com/2023/day/{day}/input"))
         .header("cookie", format!("session={}", session))
         .send()?
