@@ -1,44 +1,26 @@
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
-    Ok(input.iter().map(|line| predict_next(line)).sum::<i32>())
+    Ok(input
+        .iter()
+        .map(|line| predict_next(line.split_ascii_whitespace()))
+        .sum::<i32>())
 }
 
 pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
-    Ok(input.iter().map(|line| predict_previous(line)).sum::<i32>())
+    Ok(input
+        .iter()
+        .map(|line| predict_next(line.split_ascii_whitespace().rev()))
+        .sum::<i32>())
 }
 
-fn parse_values(input: &str) -> Vec<i32> {
-    input
-        .split_ascii_whitespace()
-        .map(|value| value.parse::<i32>().unwrap())
-        .collect::<Vec<_>>()
-}
+fn predict_next<'a>(input: impl Iterator<Item = &'a str>) -> i32 {
+    let mut values = input
+        .map(|value| value.parse().unwrap())
+        .collect::<Vec<i32>>();
 
-fn predict_next(input: &str) -> i32 {
-    let mut values = parse_values(input);
     let mut result = *values.last().unwrap();
 
     while compute_deltas(&mut values) {
         result += *values.last().unwrap();
-    }
-
-    result
-}
-
-fn predict_previous(input: &str) -> i32 {
-    let mut values = parse_values(input);
-    let mut result = values[0];
-    let mut subtract = true;
-
-    while compute_deltas(&mut values) {
-        // a - (b - (c - (d - e))) =
-        // a -  b +  c -  d + e
-        if subtract {
-            result -= values[0];
-        } else {
-            result += values[0];
-        }
-
-        subtract = !subtract;
     }
 
     result
