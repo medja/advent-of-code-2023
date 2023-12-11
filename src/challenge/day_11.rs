@@ -57,6 +57,9 @@ impl Analysis {
 
         // This function is very hot and the extra boundry checks from .get when accessing empty_space_x
         // and empty_space_y take up a significant amount of time (~10% on the total time my machine).
+        // Safety: empty_space_x contains values for each column of the image and empty_space_y contains
+        // values for each row of the image. The x and y values are coordinates of the same image.
+        // So this access never goes out of bounds.
         let expanded_x = unsafe {
             self.empty_space_x.get_unchecked(max_x) - self.empty_space_x.get_unchecked(min_x)
         };
