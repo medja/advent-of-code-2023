@@ -1,11 +1,9 @@
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
-    let analysis = Analysis::build(input);
-    Ok(analysis.sum_distances(1))
+    Ok(Analysis::build(input, 1).sum_distances())
 }
 
 pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
-    let analysis = Analysis::build(input);
-    Ok(analysis.sum_distances(999999))
+    Ok(Analysis::build(input, 999999).sum_distances())
 }
 
 struct Analysis {
@@ -15,7 +13,7 @@ struct Analysis {
 }
 
 impl Analysis {
-    fn build(image: &[&str]) -> Self {
+    fn build(image: &[&str], multiplier: usize) -> Self {
         let mut galaxies = Vec::new();
         let mut empty_space_x = vec![true; image[0].len()];
         let mut empty_space_y = vec![true; image.len()];
@@ -34,51 +32,51 @@ impl Analysis {
 
         Self {
             galaxies,
-            empty_space_x: collect_mask_indices(empty_space_x),
-            empty_space_y: collect_mask_indices(empty_space_y),
+            empty_space_x: accumulate_empty_spaces(empty_space_x, multiplier),
+            empty_space_y: accumulate_empty_spaces(empty_space_y, multiplier),
         }
     }
 
-    fn sum_distances(&self, multiplier: usize) -> u64 {
+    fn sum_distances(&self) -> u64 {
         let mut sum = 0;
 
-        for start in 0..self.galaxies.len() - 1 {
-            for end in start + 1..self.galaxies.len() {
-                sum += self.find_distance(start, end, multiplier) as u64;
+        for (i, &start) in self.galaxies.iter().enumerate() {
+            for &end in &self.galaxies[i + 1..] {
+                sum += self.find_distance(start, end) as u64;
             }
         }
 
         sum
     }
 
-    fn find_distance(&self, start: usize, end: usize, multiplier: usize) -> usize {
-        let start = self.galaxies[start];
-        let end = self.galaxies[end];
-
+    fn find_distance(&self, start: (usize, usize), end: (usize, usize)) -> usize {
         let min_x = start.0.min(end.0);
         let max_x = start.0.max(end.0);
         let min_y = start.1.min(end.1);
         let max_y = start.1.max(end.1);
 
-        let expanded_x = count_items_between(min_x, max_x, &self.empty_space_x);
-        let expanded_y = count_items_between(min_y, max_y, &self.empty_space_y);
+        // This function is very hot and the extra boundry checks from .get when accessing empty_space_x
+        // and empty_space_y take up a significant amount of time (~10% on the total time my machine).
+        let expanded_x = unsafe {
+            self.empty_space_x.get_unchecked(max_x) - self.empty_space_x.get_unchecked(min_x)
+        };
 
-        (max_x - min_x) + (max_y - min_y) + (expanded_x + expanded_y) * multiplier
+        let expanded_y = unsafe {
+            self.empty_space_y.get_unchecked(max_y) - self.empty_space_y.get_unchecked(min_y)
+        };
+
+        (max_x - min_x) + (max_y - min_y) + expanded_x + expanded_y
     }
 }
 
-fn collect_mask_indices(mask: Vec<bool>) -> Vec<usize> {
+fn accumulate_empty_spaces(mask: Vec<bool>, multiplier: usize) -> Vec<usize> {
     mask.into_iter()
-        .enumerate()
-        .filter(|(_, value)| *value)
-        .map(|(index, _)| index)
-        .collect()
-}
+        .scan(0, |count, value| {
+            if value {
+                *count += multiplier;
+            }
 
-fn count_items_between<T: PartialOrd>(min: T, max: T, values: &[T]) -> usize {
-    values
-        .iter()
-        .skip_while(|value| **value < min)
-        .take_while(|value| **value < max)
-        .count()
+            Some(*count)
+        })
+        .collect()
 }
