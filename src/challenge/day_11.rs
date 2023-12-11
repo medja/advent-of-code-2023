@@ -7,79 +7,90 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 }
 
 struct Analysis {
-    galaxies: Vec<(usize, usize)>,
-    empty_space_x: Vec<usize>,
-    empty_space_y: Vec<usize>,
+    // coordinates of each galaxy, sorted in ascending order and adjusted for expansion
+    x_coordinates: Vec<usize>,
+    y_coordinates: Vec<usize>,
 }
 
 impl Analysis {
     fn build(image: &[&str], multiplier: usize) -> Self {
-        let mut galaxies = Vec::new();
-        let mut empty_space_x = vec![true; image[0].len()];
-        let mut empty_space_y = vec![true; image.len()];
+        let mut y_coordinates = Vec::new();
+        let mut x_coordinates_count = vec![0; image[0].len()];
+        let mut y_expansion = 0;
 
+        // Scan the image and keep track of y coordinates of every galaxy (in ascending order)
+        // Use this as an opportunity to count how many times we've seen a galaxy at every x coordinate
         for (y, row) in image.iter().enumerate() {
+            let mut empty = true;
+
             for (x, pixel) in row.bytes().enumerate() {
                 if pixel != b'#' {
                     continue;
                 }
 
-                galaxies.push((x, y));
-                empty_space_x[x] = false;
-                empty_space_y[y] = false;
+                y_coordinates.push(y + y_expansion);
+                x_coordinates_count[x] += 1;
+                empty = false;
+            }
+
+            // Every empty row gets expanded into multiple rows
+            if empty {
+                y_expansion += multiplier;
+            }
+        }
+
+        let mut x_coordinates = Vec::with_capacity(y_coordinates.len());
+        let mut x_expansion = 0;
+
+        // Use the x coordinate counts to generate a vector of their coordinates
+        for (x, count) in x_coordinates_count.into_iter().enumerate() {
+            // Every empty column gets expanded into multiple columns
+            if count == 0 {
+                x_expansion += multiplier;
+                continue;
+            }
+
+            for _ in 0..count {
+                x_coordinates.push(x + x_expansion);
             }
         }
 
         Self {
-            galaxies,
-            empty_space_x: accumulate_empty_spaces(empty_space_x, multiplier),
-            empty_space_y: accumulate_empty_spaces(empty_space_y, multiplier),
+            x_coordinates,
+            y_coordinates,
         }
     }
 
     fn sum_distances(&self) -> u64 {
-        let mut sum = 0;
-
-        for (i, &start) in self.galaxies.iter().enumerate() {
-            for &end in &self.galaxies[i + 1..] {
-                sum += self.find_distance(start, end) as u64;
-            }
-        }
-
-        sum
-    }
-
-    fn find_distance(&self, start: (usize, usize), end: (usize, usize)) -> usize {
-        let min_x = start.0.min(end.0);
-        let max_x = start.0.max(end.0);
-        let min_y = start.1.min(end.1);
-        let max_y = start.1.max(end.1);
-
-        // This function is very hot and the extra boundry checks from .get when accessing empty_space_x
-        // and empty_space_y take up a significant amount of time (~10% on the total time my machine).
-        // Safety: empty_space_x contains values for each column of the image and empty_space_y contains
-        // values for each row of the image. The x and y values are coordinates of the same image.
-        // So this access never goes out of bounds.
-        let expanded_x = unsafe {
-            self.empty_space_x.get_unchecked(max_x) - self.empty_space_x.get_unchecked(min_x)
-        };
-
-        let expanded_y = unsafe {
-            self.empty_space_y.get_unchecked(max_y) - self.empty_space_y.get_unchecked(min_y)
-        };
-
-        (max_x - min_x) + (max_y - min_y) + expanded_x + expanded_y
+        (sum_distances(&self.x_coordinates) + sum_distances(&self.y_coordinates)) as u64
     }
 }
 
-fn accumulate_empty_spaces(mask: Vec<bool>, multiplier: usize) -> Vec<usize> {
-    mask.into_iter()
-        .scan(0, |count, value| {
-            if value {
-                *count += multiplier;
-            }
+// # Solved using a hint to write down my previous solution as an equation
+//
+// The sum of the minimum distances between all pairs of galaxies can be computed by adding them together
+// the differences in the x and y coordinates of all of the galaxies (assuming they're adjusted for expansion).
+// So the addition of differences of x and y coordinates. This means the x and y components of the sum
+// can be computed independently.
+//
+// Assuming there are 5 galaxies and the coordinates are sorted in ascending order,
+// the sum of the differences in x coordinates can be written down as:
+// (x1 - x0) + (x2 - x0) + (x3 - x0) + (x4 - x0) + (x2 - x1) + (x3 - x1) + (x4 - x1) + (x3 - x2) + (x4 - x2) + (x4 - x3)
+// The parentheses aren't necessary, so this can be simplified to:
+// x1 - x0 + x2 - x0 + x3 - x0 + x4 - x0 + x2 - x1 + x3 - x1 + x4 - x1 + x3 - x2 + x4 - x2 + x4 - x3
+// By combining the terms we get:
+// (-4)*x0 + (-2)*x1 + (0)*x2 + (+2)*x3 + (+4)*x4
+//
+// The number of times each term is added is equal to `N - 2i - 1`
+// Here `N` is the number of galaxies and `i` is the index of the galaxy (starting at 0).
+// Repeating this process for y coordinates and adding the results yield the sum of all of the distances.
+fn sum_distances(coordinates: &[usize]) -> i64 {
+    let offset = coordinates.len() as i64 - 1;
 
-            Some(*count)
-        })
-        .collect()
+    coordinates
+        .iter()
+        .enumerate()
+        // computes `x_i * (N - 2*i - 1)` for each coordinate (`x_i`)
+        .map(|(i, value)| (*value as i64) * ((i as i64) * 2 + offset))
+        .sum::<i64>()
 }
