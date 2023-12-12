@@ -20,6 +20,8 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 struct Solver {
     springs: Vec<Condition>,
     queue: Vec<usize>,
+    min_lengths: Vec<usize>,
+    last_damaged: usize,
     cache: Vec<u64>,
 }
 
@@ -32,6 +34,13 @@ impl Solver {
             self.unfold_queue();
         }
 
+        self.last_damaged = self
+            .springs
+            .iter()
+            .rposition(|condition| *condition == Condition::Damaged)
+            .unwrap_or_default();
+
+        self.initialize_min_lengths();
         self.initialize_cache();
         self.find_arrangements(0, 0)
     }
@@ -45,7 +54,7 @@ impl Solver {
         let queue = queue
             .split(',')
             .map(|count| count.parse::<usize>().unwrap());
-        
+
         self.queue.clear();
         self.queue.extend(queue);
     }
@@ -73,6 +82,19 @@ impl Solver {
         }
     }
 
+    // determines the minimum number of springs required by the remaining queue
+    fn initialize_min_lengths(&mut self) {
+        self.min_lengths.resize(self.queue.len(), 0);
+
+        let mut min_length = *self.queue.last().unwrap();
+        *self.min_lengths.last_mut().unwrap() = min_length;
+
+        for (i, size) in self.queue.iter().enumerate().rev().skip(1) {
+            min_length += *size + 1;
+            self.min_lengths[i] = min_length;
+        }
+    }
+
     fn initialize_cache(&mut self) {
         let length = self.springs.len() * self.queue.len() + 1;
 
@@ -87,7 +109,7 @@ impl Solver {
 
     fn find_arrangements(&mut self, spring_offset: usize, queue_offset: usize) -> u64 {
         if queue_offset == self.queue.len() {
-            return !self.contains_damaged(spring_offset) as u64;
+            return (spring_offset > self.last_damaged) as u64;
         }
 
         if spring_offset >= self.springs.len() {
@@ -108,37 +130,42 @@ impl Solver {
 
     fn count_arrangements(&mut self, spring_offset: usize, queue_offset: usize) -> u64 {
         let size = self.queue[queue_offset];
+        let min_length = self.min_lengths[queue_offset];
 
-        let (position, mendatory) = match self.find_next_position(spring_offset, size) {
+        let (position, mendatory) = match self.find_next_position(spring_offset, size, min_length) {
             Some(result) => result,
             None => return 0,
         };
 
-        let mut count = self.find_arrangements(position + size + 1, queue_offset + 1);
+        let count = if mendatory {
+            0
+        } else {
+            self.find_arrangements(position + 1, queue_offset)
+        };
 
-        if !mendatory {
-            count += self.find_arrangements(position + 1, queue_offset);
-        }
-
-        count
+        count + self.find_arrangements(position + size + 1, queue_offset + 1)
     }
 
-    fn find_next_position(&self, offset: usize, size: usize) -> Option<(usize, bool)> {
-        if offset + size > self.springs.len() {
+    fn find_next_position(
+        &self,
+        start: usize,
+        size: usize,
+        min_length: usize,
+    ) -> Option<(usize, bool)> {
+        let end = self.springs.len() - min_length + 1;
+
+        if end < start {
             return None;
         }
 
-        for (index, condition) in self.springs[offset..self.springs.len() - size + 1]
-            .iter()
-            .enumerate()
-        {
+        for (index, condition) in self.springs[start..end].iter().enumerate() {
             let mendatory = match condition {
                 Condition::Operational => continue,
                 Condition::Damaged => true,
                 Condition::Unknown => false,
             };
 
-            let position = index + offset;
+            let position = index + start;
 
             if self.matches_pattern(position, size) {
                 return Some((position, mendatory));
@@ -157,11 +184,6 @@ impl Solver {
 
         // matches_pattern is only used when self.springs[position] isn't be operational
         !self.springs[position + 1..position + size].contains(&Condition::Operational)
-    }
-
-    fn contains_damaged(&self, spring_offset: usize) -> bool {
-        spring_offset < self.springs.len()
-            && self.springs[spring_offset..].contains(&Condition::Damaged)
     }
 }
 
