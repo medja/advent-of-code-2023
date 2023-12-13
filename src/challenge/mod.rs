@@ -12,6 +12,7 @@ mod day_09;
 mod day_10;
 mod day_11;
 mod day_12;
+mod day_13;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -27,5 +28,6 @@ pub fn challenges() -> Challenges {
         day(10, "Pipe Maze", day_10::part_a, day_10::part_b),
         day(11, "Cosmic Expansion", day_11::part_a, day_11::part_b),
         day(12, "Hot Springs", day_12::part_a, day_12::part_b),
+        day(13, "Point of Incidence", day_13::part_a, day_13::part_b),
     }
 }
