@@ -1,41 +1,28 @@
 use std::cmp::Ordering;
 
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
-    let mut rows = Vec::with_capacity(17);
-    let mut columns = Vec::with_capacity(17);
-
-    let result = input
-        .split(|line| line.is_empty())
-        .map(|image| {
-            parse_image(image, &mut rows, &mut columns);
-
-            match find_clean_reflection(&rows) {
-                Some(index) => index * 100,
-                None => find_clean_reflection(&columns).unwrap(),
-            }
-        })
-        .sum::<usize>();
-
-    Ok(result)
+    Ok(summarize::<false>(input))
 }
 
 pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
+    Ok(summarize::<true>(input))
+}
+
+fn summarize<const SMUDGE: bool>(images: &[&str]) -> usize {
     let mut rows = Vec::with_capacity(17);
     let mut columns = Vec::with_capacity(17);
 
-    let result = input
+    images
         .split(|line| line.is_empty())
         .map(|image| {
             parse_image(image, &mut rows, &mut columns);
 
-            match find_dirty_reflection(&rows) {
+            match find_reflection::<SMUDGE>(&rows) {
                 Some(index) => index * 100,
-                None => find_dirty_reflection(&columns).unwrap(),
+                None => find_reflection::<SMUDGE>(&columns).unwrap(),
             }
         })
-        .sum::<usize>();
-
-    Ok(result)
+        .sum::<usize>()
 }
 
 fn parse_image(image: &[&str], rows: &mut Vec<u32>, columns: &mut Vec<u32>) {
@@ -53,6 +40,14 @@ fn parse_image(image: &[&str], rows: &mut Vec<u32>, columns: &mut Vec<u32>) {
         }
 
         rows.push(row_value);
+    }
+}
+
+fn find_reflection<const SMUDGE: bool>(lines: &[u32]) -> Option<usize> {
+    if SMUDGE {
+        find_dirty_reflection(lines)
+    } else {
+        find_clean_reflection(lines)
     }
 }
 
@@ -87,19 +82,15 @@ fn find_dirty_reflection(lines: &[u32]) -> Option<usize> {
 
         let before = &lines[..index];
         let after = &lines[index + 2..];
+        let mut pairs = before.iter().rev().zip(after);
 
-        let matches =
-            before
-                .iter()
-                .rev()
-                .zip(after)
-                .try_fold(dirty, |was_dirty, (first, second)| {
-                    match compare_lines(*first, *second) {
-                        Some(true) if was_dirty => None,
-                        Some(is_dirty) => Some(is_dirty | was_dirty),
-                        None => None,
-                    }
-                });
+        let matches = pairs.try_fold(dirty, |was_dirty, (first, second)| {
+            match compare_lines(*first, *second) {
+                Some(true) if was_dirty => None,
+                Some(is_dirty) => Some(is_dirty | was_dirty),
+                None => None,
+            }
+        });
 
         if matches!(matches, Some(true)) {
             return Some(index + 1);
