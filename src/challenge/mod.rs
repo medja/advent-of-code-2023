@@ -14,6 +14,7 @@ mod day_11;
 mod day_12;
 mod day_13;
 mod day_14;
+mod day_15;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -31,5 +32,6 @@ pub fn challenges() -> Challenges {
         day(12, "Hot Springs", day_12::part_a, day_12::part_b),
         day(13, "Point of Incidence", day_13::part_a, day_13::part_b),
         day(14, "Parabolic Reflector Dish", day_14::part_a, day_14::part_b),
+        day(15, "Lens Library", day_15::part_a, day_15::part_b),
     }
 }
