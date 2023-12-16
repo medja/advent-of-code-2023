@@ -1,6 +1,6 @@
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let mut grid = Grid::new(input);
-    grid.fire_beam((0, 0), Direction::Right);
+    grid.fire_beam((0, 0), Direction::RIGHT);
     Ok(grid.energized)
 }
 
@@ -11,21 +11,21 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 
     for x in 0..grid.width {
         grid.reset(&initial_cells);
-        grid.fire_beam((x, 0), Direction::Down);
+        grid.fire_beam((x, 0), Direction::DOWN);
         best = best.max(grid.energized);
 
         grid.reset(&initial_cells);
-        grid.fire_beam((x, grid.max_y), Direction::Up);
+        grid.fire_beam((x, grid.max_y), Direction::UP);
         best = best.max(grid.energized);
     }
 
     for y in 0..grid.height {
         grid.reset(&initial_cells);
-        grid.fire_beam((0, y), Direction::Right);
+        grid.fire_beam((0, y), Direction::RIGHT);
         best = best.max(grid.energized);
 
         grid.reset(&initial_cells);
-        grid.fire_beam((grid.max_x, y), Direction::Left);
+        grid.fire_beam((grid.max_x, y), Direction::LEFT);
         best = best.max(grid.energized);
     }
 
@@ -93,32 +93,22 @@ impl Grid {
         tile: Tile,
     ) -> Direction {
         match tile {
-            Tile::VerticalSplit if matches!(direction, Direction::Left | Direction::Right) => {
-                if let Some(position) = self.next_position(position, Direction::Up) {
-                    self.fire_beam(position, Direction::Up)
+            Tile::VerticalSplit if matches!(direction, Direction::LEFT | Direction::RIGHT) => {
+                if let Some(position) = self.next_position(position, Direction::UP) {
+                    self.fire_beam(position, Direction::UP)
                 }
 
-                Direction::Down
+                Direction::DOWN
             }
-            Tile::HorizontalSplit if matches!(direction, Direction::Up | Direction::Down) => {
-                if let Some(position) = self.next_position(position, Direction::Left) {
-                    self.fire_beam(position, Direction::Left)
+            Tile::HorizontalSplit if matches!(direction, Direction::UP | Direction::DOWN) => {
+                if let Some(position) = self.next_position(position, Direction::LEFT) {
+                    self.fire_beam(position, Direction::LEFT)
                 }
 
-                Direction::Right
+                Direction::RIGHT
             }
-            Tile::NormalMirror => match direction {
-                Direction::Up => Direction::Right,
-                Direction::Down => Direction::Left,
-                Direction::Left => Direction::Down,
-                Direction::Right => Direction::Up,
-            },
-            Tile::ReverseMirror => match direction {
-                Direction::Up => Direction::Left,
-                Direction::Down => Direction::Right,
-                Direction::Left => Direction::Up,
-                Direction::Right => Direction::Down,
-            },
+            Tile::NormalMirror => direction.normal_mirror(),
+            Tile::ReverseMirror => direction.reverse_mirror(),
             _ => direction,
         }
     }
@@ -129,10 +119,10 @@ impl Grid {
         direction: Direction,
     ) -> Option<(usize, usize)> {
         match direction {
-            Direction::Up if y > 0 => Some((x, y - 1)),
-            Direction::Down if y < self.max_y => Some((x, y + 1)),
-            Direction::Left if x > 0 => Some((x - 1, y)),
-            Direction::Right if x < self.max_x => Some((x + 1, y)),
+            Direction::UP if y > 0 => Some((x, y - 1)),
+            Direction::DOWN if y < self.max_y => Some((x, y + 1)),
+            Direction::LEFT if x > 0 => Some((x - 1, y)),
+            Direction::RIGHT if x < self.max_x => Some((x + 1, y)),
             _ => None,
         }
     }
@@ -173,21 +163,25 @@ enum Tile {
     ReverseMirror,   // \
 }
 
-#[derive(Copy, Clone)]
-enum Direction {
-    Up,
-    Down,
-    Left,
-    Right,
-}
+#[repr(transparent)]
+#[derive(Copy, Clone, Eq, PartialEq)]
+struct Direction(u8);
 
 impl Direction {
+    const UP: Self = Direction(0);
+    const DOWN: Self = Direction(1);
+    const LEFT: Self = Direction(2);
+    const RIGHT: Self = Direction(3);
+
     fn to_flag(self) -> u8 {
-        match self {
-            Direction::Up => 1,
-            Direction::Down => 2,
-            Direction::Left => 4,
-            Direction::Right => 8,
-        }
+        1 << self.0
+    }
+
+    fn normal_mirror(self) -> Self {
+        Self(3 - self.0)
+    }
+
+    fn reverse_mirror(self) -> Self {
+        Self((self.0 + 2) % 4)
     }
 }
