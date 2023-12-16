@@ -6,11 +6,7 @@ pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 
 pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let mut grid = Grid::new(input);
-
     let initial_cells = grid.cells.clone();
-    let max_x = grid.width - 1;
-    let max_y = grid.height - 1;
-
     let mut best = 0;
 
     for x in 0..grid.width {
@@ -19,7 +15,7 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
         best = best.max(grid.energized);
 
         grid.reset(&initial_cells);
-        grid.fire_beam((x, max_y), Direction::Up);
+        grid.fire_beam((x, grid.max_y), Direction::Up);
         best = best.max(grid.energized);
     }
 
@@ -29,7 +25,7 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
         best = best.max(grid.energized);
 
         grid.reset(&initial_cells);
-        grid.fire_beam((max_x, y), Direction::Left);
+        grid.fire_beam((grid.max_x, y), Direction::Left);
         best = best.max(grid.energized);
     }
 
@@ -39,6 +35,8 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 struct Grid {
     width: usize,
     height: usize,
+    max_x: usize,
+    max_y: usize,
     cells: Vec<Cell>,
     energized: usize,
 }
@@ -57,6 +55,8 @@ impl Grid {
         Self {
             width,
             height,
+            max_x: width - 1,
+            max_y: height - 1,
             cells,
             energized: 0,
         }
@@ -129,38 +129,11 @@ impl Grid {
         direction: Direction,
     ) -> Option<(usize, usize)> {
         match direction {
-            Direction::Up => {
-                if y > 0 {
-                    Some((x, y - 1))
-                } else {
-                    None
-                }
-            }
-            Direction::Down => {
-                let next_y = y + 1;
-
-                if next_y < self.height {
-                    Some((x, next_y))
-                } else {
-                    None
-                }
-            }
-            Direction::Left => {
-                if x > 0 {
-                    Some((x - 1, y))
-                } else {
-                    None
-                }
-            }
-            Direction::Right => {
-                let next_x = x + 1;
-
-                if next_x < self.width {
-                    Some((next_x, y))
-                } else {
-                    None
-                }
-            }
+            Direction::Up if y > 0 => Some((x, y - 1)),
+            Direction::Down if y < self.max_y => Some((x, y + 1)),
+            Direction::Left if x > 0 => Some((x - 1, y)),
+            Direction::Right if x < self.max_x => Some((x + 1, y)),
+            _ => None,
         }
     }
 
