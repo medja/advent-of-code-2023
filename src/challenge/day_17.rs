@@ -34,6 +34,10 @@ fn find_best_path(input: &[&str], min_steps: isize, max_steps: isize) -> anyhow:
         direction,
     }) = queue.pop()
     {
+        if x == max_x && y == max_y {
+            return Ok(cost);
+        }
+
         if costs[x + y * width + direction * grid.len()] < cost {
             continue;
         }
@@ -74,11 +78,6 @@ fn find_best_path(input: &[&str], min_steps: isize, max_steps: isize) -> anyhow:
                 }
 
                 let cost = cost + heat_loss;
-
-                if x == max_x && y == max_y {
-                    return Ok(cost);
-                }
-
                 let id = index + direction * grid.len();
 
                 if cost >= costs[id] {
