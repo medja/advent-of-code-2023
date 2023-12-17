@@ -1,5 +1,10 @@
 use std::collections::BinaryHeap;
 
+// Heat loss is worse around the center of the grid - the highest values (8, 9) only appear there
+// This means that the center should be avoided (by skipping the highest values)
+// This constraint might not work for all inputs
+const MAX_HEAT_LOSS: u8 = 7;
+
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     find_best_path(input, 1, 3)
 }
@@ -57,7 +62,7 @@ fn find_best_path(input: &[&str], min_steps: isize, max_steps: isize) -> anyhow:
 
             let mut x = x as isize;
             let mut y = y as isize;
-            let mut heat_loss = 0;
+            let mut total_heat_loss = 0;
 
             for steps in 1..=max_steps {
                 x += dx;
@@ -70,14 +75,19 @@ fn find_best_path(input: &[&str], min_steps: isize, max_steps: isize) -> anyhow:
                 let x = x as usize;
                 let y = y as usize;
                 let index = x + y * width;
+                let heat_loss = grid[index];
 
-                heat_loss += grid[index] as usize;
+                if heat_loss > MAX_HEAT_LOSS {
+                    break;
+                }
+
+                total_heat_loss += heat_loss as usize;
 
                 if steps < min_steps {
                     continue;
                 }
 
-                let cost = cost + heat_loss;
+                let cost = cost + total_heat_loss;
                 let id = index + direction * grid.len();
 
                 if cost >= costs[id] {
