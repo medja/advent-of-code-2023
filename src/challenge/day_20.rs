@@ -1,6 +1,9 @@
 use gcd::Gcd;
 use rustc_hash::FxHashMap;
-use std::collections::{hash_map::Entry, VecDeque};
+use std::{
+    collections::{hash_map::Entry, VecDeque},
+    ops::BitOrAssign,
+};
 
 const RX_INDEX: usize = 1;
 
@@ -29,28 +32,38 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
         .position(|connection| connection.children.has(RX_INDEX))
         .unwrap();
 
-    let required_count = match connections[last_conjunction].module {
-        Module::Conjunction { required, .. } => required.into_iter().count(),
+    let required = match connections[last_conjunction].module {
+        Module::Conjunction { required, .. } => required,
         _ => unreachable!(),
     };
 
+    let mut seen = BitSet::default();
+
+    // Visualizing the problem shows that the modules form 4 "loops".
+    // Exactly one of the modules of a loop receives pulses from the broadcaster and exactly one of
+    // the modules emits a pulse to the conjunction module before rx.
+    // Because of how the loops are structured, they emit a high pulse on exact intervals.
+
+    // This solution assumes that rx receives pulses from a single conjunction module and that
+    // its input modules emit high pulses on exact interval. It doesn't assume 4 loops as I could
+    // not confirm that when implementing the solution.
+
     let mut step = 0u64;
-    let mut count = 0usize;
     let mut solution = 1u64;
 
     loop {
         step += 1;
 
-        let (_, _, triggered) = simulate(&mut connections, &mut queue, last_conjunction);
+        let (_, _, sources) = simulate(&mut connections, &mut queue, last_conjunction);
 
-        if !triggered {
+        if sources.is_empty() {
             continue;
         }
 
-        count += 1;
+        seen |= sources;
         solution = solution * step / solution.gcd(step);
 
-        if count == required_count {
+        if seen == required {
             break Ok(solution);
         }
     }
@@ -60,12 +73,12 @@ fn simulate(
     connections: &mut [Connection],
     queue: &mut VecDeque<Pulse>,
     monitor: usize,
-) -> (usize, usize, bool) {
+) -> (usize, usize, BitSet) {
     queue.push_front(Pulse::default());
 
     let mut low_count = 0;
     let mut hight_count = 0;
-    let mut triggered = false;
+    let mut sources = BitSet::default();
 
     while let Some(pulse) = queue.pop_front() {
         if pulse.state {
@@ -81,18 +94,18 @@ fn simulate(
                 *state = !*state;
                 *state
             }
-            Module::Conjunction { set, required } => {
+            Module::Conjunction { active, required } => {
                 if pulse.state && pulse.destination == monitor {
-                    triggered = true;
+                    sources = sources.set(pulse.source);
                 }
 
-                *set = if pulse.state {
-                    set.set(pulse.source)
+                *active = if pulse.state {
+                    active.set(pulse.source)
                 } else {
-                    set.unset(pulse.source)
+                    active.unset(pulse.source)
                 };
 
-                set != required
+                active != required
             }
         };
 
@@ -105,7 +118,7 @@ fn simulate(
         }
     }
 
-    (low_count, hight_count, triggered)
+    (low_count, hight_count, sources)
 }
 
 fn parse(input: &[&str]) -> Vec<Connection> {
@@ -125,7 +138,7 @@ fn parse(input: &[&str]) -> Vec<Connection> {
             b'b' => Module::Broadcaster,
             b'%' => Module::FlipFlop { state: false },
             b'&' => Module::Conjunction {
-                set: BitSet::default(),
+                active: BitSet::default(),
                 required: BitSet::default(),
             },
             _ => unreachable!(),
@@ -171,13 +184,13 @@ fn get_id<'a>(value: &'a [u8], next_id: &mut usize, ids: &mut FxHashMap<&'a [u8]
     id
 }
 
-#[derive(Default, Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Default)]
 struct Connection {
     module: Module,
     children: BitSet,
 }
 
-#[derive(Default, Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq, Default)]
 enum Module {
     #[default]
     Broadcaster,
@@ -185,12 +198,12 @@ enum Module {
         state: bool,
     },
     Conjunction {
-        set: BitSet,
+        active: BitSet,
         required: BitSet,
     },
 }
 
-#[derive(Default, Debug)]
+#[derive(Default)]
 struct Pulse {
     source: usize,
     destination: usize,
@@ -201,6 +214,10 @@ struct Pulse {
 struct BitSet(u64);
 
 impl BitSet {
+    fn is_empty(self) -> bool {
+        self.0 == 0
+    }
+
     fn has(self, value: usize) -> bool {
         self.0 & (1 << value) != 0
     }
@@ -214,9 +231,9 @@ impl BitSet {
     }
 }
 
-impl std::fmt::Debug for BitSet {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.debug_list().entries(*self).finish()
+impl BitOrAssign for BitSet {
+    fn bitor_assign(&mut self, rhs: Self) {
+        self.0 |= rhs.0
     }
 }
 
