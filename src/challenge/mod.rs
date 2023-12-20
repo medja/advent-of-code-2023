@@ -19,6 +19,7 @@ mod day_16;
 mod day_17;
 mod day_18;
 mod day_19;
+mod day_20;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -41,5 +42,6 @@ pub fn challenges() -> Challenges {
         day(17, "Clumsy Crucible", day_17::part_a, day_17::part_b),
         day(18, "Lavaduct Lagoon", day_18::part_a, day_18::part_b),
         day(19, "Aplenty", day_19::part_a, day_19::part_b),
+        day(20, "Pulse Propagation", day_20::part_a, day_20::part_b),
     }
 }
