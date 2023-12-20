@@ -120,13 +120,13 @@ fn count_combinations(ranges: &[Range; 4]) -> u64 {
     ranges.iter().map(Range::count).product::<u64>()
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Clone, Default)]
 struct Workflow {
     rules: [Rule; 3],
     default: Action,
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default)]
 struct Rule {
     field: u8,
     comparison: Comparison,
@@ -134,14 +134,14 @@ struct Rule {
     action: Action,
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default)]
 enum Comparison {
     #[default]
     Less,
     Greater,
 }
 
-#[derive(Copy, Clone, Default, Debug)]
+#[derive(Copy, Clone, Default)]
 enum Action {
     #[default]
     Accept,
@@ -149,7 +149,7 @@ enum Action {
     Workflow(u16),
 }
 
-#[derive(Clone, Eq, PartialEq, Debug)]
+#[derive(Clone, Eq, PartialEq)]
 struct Range {
     start: u16,
     end: u16,
