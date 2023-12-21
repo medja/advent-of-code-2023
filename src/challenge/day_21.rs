@@ -97,8 +97,31 @@ fn simulate(input: &[&str], steps: usize, quadrant: Quadrant) -> FxHashSet<(isiz
     let mut next_steps = FxHashSet::default();
     current_steps.insert(start);
 
-    for _ in 0..steps {
+    // Once a grid is fully "discovered" it starts swapping between 2 arrangements.
+    // So we can freeze them in the "correct" state to improve performance.
+    let center_freeze = (size - 1) as usize;
+    let extended_freeze = 2 * center_freeze;
+
+    let is_frozen = |step: usize, x: isize, y: isize| -> bool {
+        if step > extended_freeze {
+            // freezes the center grid and the adjacent (top, bottom, left, right) grids
+            ((-131..262).contains(&x) && (0..131).contains(&y))
+                || ((0..131).contains(&x) && (-131..262).contains(&y))
+        } else if step > center_freeze {
+            // freezes the center grid
+            (0..131).contains(&x) && (0..131).contains(&y)
+        } else {
+            false
+        }
+    };
+
+    for step in 0..steps {
         for (x, y) in current_steps.drain() {
+            if is_frozen(step, x, y) {
+                next_steps.insert((x, y));
+                continue;
+            }
+
             for (dx, dy) in [(1, 0), (0, 1), (-1, 0), (0, -1)] {
                 let x = x + dx;
                 let y = y + dy;
@@ -109,7 +132,11 @@ fn simulate(input: &[&str], steps: usize, quadrant: Quadrant) -> FxHashSet<(isiz
                     Quadrant::BottomLeft if x > start.0 || y < start.1 => continue,
                     Quadrant::BottomRight if x < start.0 || y < start.1 => continue,
                     _ => {}
-                };
+                }
+
+                if is_frozen(step, x, y) {
+                    continue;
+                }
 
                 let gx = x.rem_euclid(size) as usize;
                 let gy = y.rem_euclid(size) as usize;
