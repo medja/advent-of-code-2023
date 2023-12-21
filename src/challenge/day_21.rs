@@ -95,6 +95,7 @@ fn simulate(input: &[&str], steps: usize, quadrant: Quadrant) -> FxHashSet<(isiz
 
     let mut current_steps = FxHashSet::default();
     let mut next_steps = FxHashSet::default();
+    let mut frozen_steps = FxHashSet::default();
     current_steps.insert(start);
 
     // Once a grid is fully "discovered" it starts swapping between 2 arrangements.
@@ -118,7 +119,7 @@ fn simulate(input: &[&str], steps: usize, quadrant: Quadrant) -> FxHashSet<(isiz
     for step in 0..steps {
         for (x, y) in current_steps.drain() {
             if is_frozen(step, x, y) {
-                next_steps.insert((x, y));
+                frozen_steps.insert((x, y));
                 continue;
             }
 
@@ -152,6 +153,7 @@ fn simulate(input: &[&str], steps: usize, quadrant: Quadrant) -> FxHashSet<(isiz
         (current_steps, next_steps) = (next_steps, current_steps);
     }
 
+    current_steps.extend(frozen_steps);
     current_steps
 }
 
