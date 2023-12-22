@@ -8,6 +8,10 @@ mod challenge;
 mod day;
 mod solution;
 
+#[cfg(not(target_env = "msvc"))]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
 fn main() -> anyhow::Result<()> {
     if std::env::args().count() > 1 {
         run(std::env::args().skip(1).map(Ok), false)
