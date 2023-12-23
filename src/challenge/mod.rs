@@ -22,6 +22,7 @@ mod day_19;
 mod day_20;
 mod day_21;
 mod day_22;
+mod day_23;
 
 pub fn challenges() -> Challenges {
     build! {
@@ -47,5 +48,6 @@ pub fn challenges() -> Challenges {
         day(20, "Pulse Propagation", day_20::part_a, day_20::part_b),
         day(21, "Step Counter", day_21::part_a, day_21::part_b),
         day(22, "Sand Slabs", day_22::part_a, day_22::part_b),
+        day(23, "A Long Walk", day_23::part_a, day_23::part_b),
     }
 }
