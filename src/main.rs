@@ -7,6 +7,7 @@ mod aoc;
 mod challenge;
 mod day;
 mod solution;
+mod utils;
 
 #[cfg(not(target_env = "msvc"))]
 #[global_allocator]

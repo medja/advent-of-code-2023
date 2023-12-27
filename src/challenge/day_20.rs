@@ -1,9 +1,6 @@
+use crate::utils::IndexMapBuilder;
 use gcd::Gcd;
-use rustc_hash::FxHashMap;
-use std::{
-    collections::{hash_map::Entry, VecDeque},
-    ops::BitOrAssign,
-};
+use std::{collections::VecDeque, ops::BitOrAssign};
 
 const RX_INDEX: usize = 1;
 
@@ -122,12 +119,10 @@ fn simulate(
 }
 
 fn parse(input: &[&str]) -> Vec<Connection> {
-    let mut ids = FxHashMap::<&[u8], usize>::default();
-    ids.insert(b"broadcaster", 0);
-    ids.insert(b"rx", RX_INDEX);
-
-    let mut next_id = 2;
-    let mut connections = vec![Connection::default(); input.len() + 1]; // rx doesn't have its own row
+    // +1 because rx doesn't have its own row
+    let mut builder = IndexMapBuilder::<&[u8], Connection>::with_capacity(input.len() + 1);
+    builder.reserve(b"broadcaster");
+    builder.reserve(b"rx");
 
     for line in input.iter() {
         let mut parts = line.as_bytes().split(|char| *char == b' ');
@@ -144,44 +139,34 @@ fn parse(input: &[&str]) -> Vec<Connection> {
             _ => unreachable!(),
         };
 
-        let id = get_id(source, &mut next_id, &mut ids);
+        let id = builder.find_index(get_id(source));
 
         let children = parts
-            .map(|child| get_id(child, &mut next_id, &mut ids))
+            .map(|child| builder.find_index(get_id(child)))
             .fold(BitSet::default(), |set, id| set.set(id));
 
-        connections[id] = Connection { module, children };
+        builder[id] = Connection { module, children };
     }
 
-    for i in 0..connections.len() {
-        for child in connections[i].children {
-            if let Module::Conjunction { required, .. } = &mut connections[child].module {
+    for i in 0..builder.len() {
+        for child in builder[i].children {
+            if let Module::Conjunction { required, .. } = &mut builder[child].module {
                 *required = required.set(i);
             }
         }
     }
 
-    connections
+    builder.build()
 }
 
-fn get_id<'a>(value: &'a [u8], next_id: &mut usize, ids: &mut FxHashMap<&'a [u8], usize>) -> usize {
-    let value = if !value[0].is_ascii_lowercase() {
+fn get_id(value: &[u8]) -> &[u8] {
+    if !value[0].is_ascii_lowercase() {
         &value[1..]
     } else if !value[value.len() - 1].is_ascii_lowercase() {
         &value[..value.len() - 1]
     } else {
         value
-    };
-
-    let entry = match ids.entry(value) {
-        Entry::Occupied(entry) => return *entry.get(),
-        Entry::Vacant(entry) => entry,
-    };
-
-    let id = *next_id;
-    *next_id += 1;
-    entry.insert(id);
-    id
+    }
 }
 
 #[derive(Clone, Eq, PartialEq, Default)]

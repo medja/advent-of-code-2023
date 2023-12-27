@@ -1,5 +1,4 @@
-use rustc_hash::FxHashMap;
-use std::collections::hash_map::Entry;
+use crate::utils::IndexMapBuilder;
 
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let mut parts = input.split(|line| line.is_empty());
@@ -166,43 +165,29 @@ impl Range {
     }
 }
 
-struct Parser<'a> {
-    next_id: usize,
-    ids: FxHashMap<&'a [u8], usize>,
-    builder: Vec<Workflow>,
-}
+struct Parser<'a>(IndexMapBuilder<&'a [u8], Workflow>);
 
 impl<'a> Parser<'a> {
     fn parse(input: &'a [&'a str]) -> Vec<Workflow> {
-        let mut parser = Self::new(input);
+        let mut parser = Self(IndexMapBuilder::with_capacity(input.len()));
+        parser.0.reserve(b"in");
 
         for input in input {
             parser.parse_workflow(input.as_bytes());
         }
 
-        parser.builder
-    }
-
-    fn new(input: &'a [&'a str]) -> Self {
-        let mut ids = FxHashMap::<&[u8], usize>::default();
-        ids.reserve(input.len());
-
-        Self {
-            next_id: 1,
-            ids,
-            builder: vec![Workflow::default(); input.len()],
-        }
+        parser.0.build()
     }
 
     fn parse_workflow(&mut self, input: &'a [u8]) {
         let start = input.iter().position(|char| *char == b'{').unwrap();
         let end = input.iter().rposition(|char| *char == b',').unwrap();
 
-        let id = self.parse_id(&input[..start]);
+        let id = self.0.find_index(&input[..start]);
         let rules = self.parse_rules(&input[start + 1..end]);
         let default = self.parse_action(&input[end + 1..input.len() - 1]);
 
-        self.builder[id] = Workflow { rules, default };
+        self.0[id] = Workflow { rules, default };
     }
 
     fn parse_rules(&mut self, input: &'a [u8]) -> [Rule; 3] {
@@ -231,25 +216,8 @@ impl<'a> Parser<'a> {
         match value {
             [b'A'] => Action::Accept,
             [b'R'] => Action::Reject,
-            _ => Action::Workflow(self.parse_id(value) as u16),
+            _ => Action::Workflow(self.0.find_index(value) as u16),
         }
-    }
-
-    fn parse_id(&mut self, value: &'a [u8]) -> usize {
-        if value == b"in" {
-            return 0;
-        }
-
-        let entry = match self.ids.entry(value) {
-            Entry::Occupied(entry) => return *entry.get(),
-            Entry::Vacant(entry) => entry,
-        };
-
-        let id = self.next_id;
-        self.next_id += 1;
-
-        entry.insert(id);
-        id
     }
 }
 

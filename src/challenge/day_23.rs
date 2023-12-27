@@ -1,5 +1,6 @@
-use rustc_hash::{FxHashMap, FxHashSet};
-use std::{collections::hash_map::Entry, ops::Index};
+use crate::utils::IndexMapBuilder;
+use rustc_hash::FxHashSet;
+use std::ops::Index;
 
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     Ok(solve(input, true))
@@ -44,11 +45,8 @@ fn find_longest_path(id: usize, distance: usize, graph: &[Node], visited: &mut [
 
 // Build a graph of the mazes junctions and the edges between them
 fn build_graph(maze: Maze) -> Vec<Node> {
-    let mut ids = FxHashMap::default();
-    ids.insert(maze.end, 0);
-
-    let mut graph = Vec::new();
-    graph.push(Node::default());
+    let mut builder = IndexMapBuilder::<(usize, usize), Node>::default();
+    builder.reserve(maze.end);
 
     // only keeps track of the points adjecent to junctions
     // the rest of the path doesn't need to be marked as visited
@@ -56,22 +54,21 @@ fn build_graph(maze: Maze) -> Vec<Node> {
     visited.insert((1, 0));
 
     // skips the starting position (x = 1, y = 0) to avoid requiring edge detection
-    build_graph_node(1, 1, &mut ids, &mut graph, &mut visited, &maze);
-    graph
+    build_graph_node(1, 1, &mut builder, &mut visited, &maze);
+    builder.build()
 }
 
 // DFS search of the entire maze
 fn build_graph_node(
     x: usize,
     y: usize,
-    ids: &mut IdLookup,
-    graph: &mut Vec<Node>,
-    visited: &mut Visited,
+    builder: &mut IndexMapBuilder<(usize, usize), Node>,
+    visited: &mut FxHashSet<(usize, usize)>,
     maze: &Maze,
 ) {
     let start_x = x;
     let start_y = y;
-    let start_id = find_node_id(x, y, ids, graph);
+    let start_id = builder.find_index((x, y));
 
     for (direction, x, y) in find_neighbors(x, y) {
         // find unvisited paths
@@ -98,27 +95,22 @@ fn build_graph_node(
         // prevent re-entering the end of the path later
         visited.insert((prev_x, prev_y));
 
-        let end_id = find_node_id(x, y, ids, graph);
-        update_path(start_id, end_id, distance, traversable, graph);
+        let end_id = builder.find_index((x, y));
+
+        update_path(
+            start_id,
+            end_id,
+            distance,
+            traversable,
+            builder.values_mut(),
+        );
 
         // continue DFS from the newly discovered junction
         // the end of maze (id = 0) is not a junction
         if end_id != 0 {
-            build_graph_node(x, y, ids, graph, visited, maze);
+            build_graph_node(x, y, builder, visited, maze);
         }
     }
-}
-
-fn find_node_id(x: usize, y: usize, ids: &mut IdLookup, graph: &mut Vec<Node>) -> usize {
-    let entry = match ids.entry((x, y)) {
-        Entry::Occupied(entry) => return *entry.get(),
-        Entry::Vacant(entry) => entry,
-    };
-
-    let id = graph.len();
-    entry.insert(id);
-    graph.push(Node::default());
-    id
 }
 
 fn find_neighbors(x: usize, y: usize) -> [(Direction, usize, usize); 4] {
@@ -219,9 +211,6 @@ fn update_path(
         }
     }
 }
-
-type IdLookup = FxHashMap<(usize, usize), usize>;
-type Visited = FxHashSet<(usize, usize)>;
 
 #[derive(Default)]
 struct Node {

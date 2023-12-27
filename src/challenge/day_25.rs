@@ -1,3 +1,4 @@
+use crate::utils::IndexMapBuilder;
 use rustc_hash::FxHashMap;
 use std::{
     collections::{hash_map::Entry, VecDeque},
@@ -36,37 +37,20 @@ pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
 }
 
 fn build_graph(input: &[&str]) -> Vec<Node> {
-    let mut ids = FxHashMap::default();
-    let mut graph = Vec::new();
+    let mut builder = IndexMapBuilder::<&[u8], Node>::default();
 
     for line in input {
         let line = line.as_bytes();
-        let from = get_id(&line[..3], &mut ids, &mut graph);
+        let from = builder.find_index(&line[..3]);
 
         for to in line[5..].split(|char| *char == b' ') {
-            let to = get_id(to, &mut ids, &mut graph);
-            graph[from].edges.push(to);
-            graph[to].edges.push(from);
+            let to = builder.find_index(to);
+            builder[from].edges.push(to);
+            builder[to].edges.push(from);
         }
     }
 
-    graph
-}
-
-fn get_id<'a>(
-    value: &'a [u8],
-    ids: &mut FxHashMap<&'a [u8], usize>,
-    graph: &mut Vec<Node>,
-) -> usize {
-    let entry = match ids.entry(value) {
-        Entry::Occupied(entry) => return *entry.get(),
-        Entry::Vacant(entry) => entry,
-    };
-
-    let next_id = graph.len();
-    entry.insert(next_id);
-    graph.push(Node::default());
-    next_id
+    builder.build()
 }
 
 fn find_min_cut(
