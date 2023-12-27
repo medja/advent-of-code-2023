@@ -5,6 +5,21 @@ use std::{
     mem::MaybeUninit,
 };
 
+// The problem states that the minimum cut contains 3 edges
+// It also implies that the minimum cut splits the graph into 2 similarly sized graphs
+// So the graph is composed of 2 clusters of nodes, connected via 3 edges.
+// This means that theres's a rougly 50% chance (turns out it's lower, but it still works out)
+// that 2 randomly selected nodes will be part of different clusters
+// Assuming there lots of paths between the nodes inside each cluster, that means that the
+// most common edges (in paths between all node pairs) are going to be the edges we have to cut
+// So this solution searches for the shortest path between 50 random nodes and determines the most
+// frequent eges
+// It then removes those edges and counts the number of reachable nodes (starting from one node)
+// and if the number is smaller than the number of nodes, we've found the minimum cut
+// Otherwise we haven't found the minimum cut and the solution searches for 10 more shortest paths
+// It continues searching for 10 more paths until the solution is found
+// This is technically a Monte Carlo algorith - it works well because it's very easy to determine if
+// the solution is correct, so it can simply be repeated until the correct solution is found
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let mut graph = build_graph(input);
     let mut frequencies = Frequencies::default();
