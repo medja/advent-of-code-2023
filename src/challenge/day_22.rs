@@ -1,3 +1,4 @@
+use crate::utils::Bytes;
 use rustc_hash::FxHashSet;
 use std::cmp::Ordering;
 
@@ -138,7 +139,9 @@ struct Brick {
 
 impl Brick {
     fn new(input: &[u8]) -> Self {
-        let mut iter = input.split(|char| !char.is_ascii_digit()).map(parse_digit);
+        let mut iter = input
+            .split(|char| !char.is_ascii_digit())
+            .map(|value| value.parse_dec());
 
         Self {
             x0: iter.next().unwrap(),
@@ -176,10 +179,4 @@ impl Default for Point {
             z: 0,
         }
     }
-}
-
-fn parse_digit(value: &[u8]) -> usize {
-    value
-        .iter()
-        .fold(0, |acc, char| acc * 10 + (char - b'0') as usize)
 }

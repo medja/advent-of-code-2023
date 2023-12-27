@@ -1,3 +1,4 @@
+use crate::utils::Bytes;
 use std::cmp::Ordering;
 
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
@@ -25,8 +26,8 @@ fn parse_numbers(input: &str) -> impl Iterator<Item = u64> + '_ {
 fn parse_number(input: &str) -> u64 {
     input
         .split_ascii_whitespace()
-        .flat_map(|number| number.bytes())
-        .fold(0u64, |acc, digit| (acc * 10) + (digit - b'0') as u64)
+        .flat_map(|number| number.as_bytes())
+        .parse_dec()
 }
 
 fn compute_error_margin(min_time: u64, limit: u64) -> u64 {

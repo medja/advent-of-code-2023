@@ -1,3 +1,5 @@
+use crate::utils::Bytes;
+
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     Ok(measure_area(
         input,
@@ -24,24 +26,11 @@ fn parse_complex_direction(input: &[u8]) -> u8 {
 
 fn parse_simple_distance(input: &[u8]) -> i64 {
     let index = 2 + input[2..].iter().position(|char| *char == b' ').unwrap();
-
-    input[2..index]
-        .iter()
-        .fold(0, |acc, char| acc * 10 + char - b'0') as i64
+    input[2..index].parse_dec()
 }
 
 fn parse_complex_distance(input: &[u8]) -> i64 {
-    input[input.len() - 7..input.len() - 2]
-        .iter()
-        .fold(0, |acc, &char| {
-            let value = if char > b'9' {
-                char - b'a' + 10
-            } else {
-                char - b'0'
-            };
-
-            (acc << 4) + (value as i64)
-        })
+    input[input.len() - 7..input.len() - 2].parse_hex()
 }
 
 fn measure_area(

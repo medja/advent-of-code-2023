@@ -1,4 +1,4 @@
-use crate::utils::IndexMapBuilder;
+use crate::utils::{Bytes, IndexMapBuilder};
 
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     let mut parts = input.split(|line| line.is_empty());
@@ -198,7 +198,7 @@ impl<'a> Parser<'a> {
 
             let field = parse_field_index(input[0]);
             let comparison = parse_comparison(input[1]);
-            let value = parse_number(&input[2..i]);
+            let value = input[2..i].parse_dec();
             let action = self.parse_action(&input[i + 1..]);
 
             rules[index] = Rule {
@@ -227,7 +227,7 @@ fn parse_part(input: &str) -> [u16; 4] {
         .as_bytes()
         .split(|char| !char.is_ascii_digit())
         .filter(|value| !value.is_empty())
-        .map(parse_number);
+        .map(|value| value.parse_dec());
 
     [
         iter.next().unwrap(),
@@ -235,12 +235,6 @@ fn parse_part(input: &str) -> [u16; 4] {
         iter.next().unwrap(),
         iter.next().unwrap(),
     ]
-}
-
-fn parse_number(value: &[u8]) -> u16 {
-    value
-        .iter()
-        .fold(0, |acc, char| acc * 10 + (char - b'0') as u16)
 }
 
 fn parse_field_index(value: u8) -> u8 {

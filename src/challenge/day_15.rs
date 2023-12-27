@@ -1,3 +1,5 @@
+use crate::utils::Bytes;
+
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     Ok(input[0]
         .split(',')
@@ -66,7 +68,7 @@ pub fn part_b(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
             // skipping over empty slots doesn't yield a performance improvement due to the additional branches
             slots.into_iter().enumerate().map(move |(i, lense)| {
                 let slot_multiplier = i + 1;
-                parse(lense.focal_length) * slot_multiplier * box_multiplier
+                lense.focal_length.parse_dec::<usize>() * slot_multiplier * box_multiplier
             })
         })
         .sum::<usize>();
@@ -85,12 +87,6 @@ fn hash(value: &[u8]) -> usize {
     value
         .iter()
         .fold(0, |acc, char| (acc + *char as usize) * 17 % 256)
-}
-
-fn parse(value: &[u8]) -> usize {
-    value
-        .iter()
-        .fold(0, |acc, char| acc * 10 + (char - b'0') as usize)
 }
 
 #[derive(Default, Copy, Clone)]

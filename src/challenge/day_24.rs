@@ -1,3 +1,5 @@
+use crate::utils::Bytes;
+
 pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
     const MIN: f64 = 200000000000000f64;
     const MAX: f64 = 400000000000000f64;
@@ -6,11 +8,11 @@ pub fn part_a(input: &[&str]) -> anyhow::Result<impl std::fmt::Display> {
         .iter()
         .map(|line| {
             let mut iter = split_line(line);
-            let cx = parse_number(iter.next().unwrap());
-            let cy = parse_number(iter.next().unwrap());
+            let cx = parse_next_number(&mut iter);
+            let cy = parse_next_number(&mut iter);
             iter.next(); // skip z
-            let dx = parse_number(iter.next().unwrap());
-            let dy = parse_number(iter.next().unwrap());
+            let dx = parse_next_number(&mut iter);
+            let dy = parse_next_number(&mut iter);
 
             let d = dy / dx;
             let c = cy - d * cx;
@@ -217,14 +219,8 @@ fn split_line(line: &str) -> impl Iterator<Item = &[u8]> + '_ {
         .filter(|part| !part.is_empty())
 }
 
-fn parse_number(value: &[u8]) -> f64 {
-    if value[0] == b'-' {
-        -parse_number(&value[1..])
-    } else {
-        value
-            .iter()
-            .fold(0, |acc, char| acc * 10 + (char - b'0') as i64) as f64
-    }
+fn parse_next_number<'a>(iter: &mut impl Iterator<Item = &'a [u8]>) -> f64 {
+    iter.next().unwrap().parse_signed_dec::<i64>() as f64
 }
 
 struct Hailstone {
@@ -241,12 +237,12 @@ impl Hailstone {
         let mut iter = split_line(line);
 
         Self {
-            cx: parse_number(iter.next().unwrap()),
-            cy: parse_number(iter.next().unwrap()),
-            cz: parse_number(iter.next().unwrap()),
-            dx: parse_number(iter.next().unwrap()),
-            dy: parse_number(iter.next().unwrap()),
-            dz: parse_number(iter.next().unwrap()),
+            cx: parse_next_number(&mut iter),
+            cy: parse_next_number(&mut iter),
+            cz: parse_next_number(&mut iter),
+            dx: parse_next_number(&mut iter),
+            dy: parse_next_number(&mut iter),
+            dz: parse_next_number(&mut iter),
         }
     }
 }
